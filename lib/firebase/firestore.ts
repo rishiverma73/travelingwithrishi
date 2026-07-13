@@ -159,8 +159,16 @@ export async function getDestinations(opts: {
   withTripCounts?: boolean
   withPublishedTrips?: boolean
 } = {}): Promise<(Destination & { trips?: any[] })[]> {
-  const snap = await adminDb.collection('destinations').orderBy('region').orderBy('name').get()
+  const snap = await adminDb.collection('destinations').get()
   const destinations = snap.docs.map(docToDestination)
+
+  // Sort by region ASC, then name ASC
+  destinations.sort((a, b) => {
+    const regionA = a.region || ''
+    const regionB = b.region || ''
+    if (regionA !== regionB) return regionA.localeCompare(regionB)
+    return a.name.localeCompare(b.name)
+  })
 
   if (!opts.withTripCounts && !opts.withPublishedTrips) {
     return destinations
@@ -205,16 +213,24 @@ export async function getDestinationWithTrips(slug: string): Promise<(Destinatio
   const tripsSnap = await adminDb
     .collection('trips')
     .where('destinationSlug', '==', slug)
-    .where('isPublished', '==', true)
-    .orderBy('dateFrom', 'desc')
     .get()
 
   const trips: Trip[] = []
   for (const tripDoc of tripsSnap.docs) {
     const photosSnap = await adminDb.collection('trips').doc(tripDoc.id).collection('photos').orderBy('sortOrder').get()
     const photos = photosSnap.docs.map(p => docToPhoto(p, tripDoc.id))
-    trips.push(docToTrip(tripDoc, photos))
+    const trip = docToTrip(tripDoc, photos)
+    if (trip.isPublished) {
+      trips.push(trip)
+    }
   }
+
+  // Sort by dateFrom DESC
+  trips.sort((a, b) => {
+    const dateA = a.dateFrom ? new Date(a.dateFrom).getTime() : 0
+    const dateB = b.dateFrom ? new Date(b.dateFrom).getTime() : 0
+    return dateB - dateA
+  })
 
   return { ...dest, trips }
 }
@@ -276,26 +292,8 @@ export async function getTrips(opts: {
   search?: string
   includePhotos?: boolean
 } = {}): Promise<Trip[]> {
-  let query: FirebaseFirestore.Query = adminDb.collection('trips')
-
-  if (opts.destinationSlug) {
-    query = query.where('destinationSlug', '==', opts.destinationSlug)
-  }
-  if (opts.publishedOnly) {
-    query = query.where('isPublished', '==', true)
-  }
-  if (opts.featured) {
-    query = query.where('isFeatured', '==', true)
-  }
-
-  // Order: featured first, then by dateFrom desc, then createdAt desc
-  query = query.orderBy('isFeatured', 'desc').orderBy('createdAt', 'desc')
-
-  if (opts.limit) {
-    query = query.limit(opts.limit)
-  }
-
-  const snap = await query.get()
+  // Fetch all trips (travel diary scale is small enough for in-memory processing)
+  const snap = await adminDb.collection('trips').get()
   let trips: Trip[] = []
 
   for (const doc of snap.docs) {
@@ -304,7 +302,28 @@ export async function getTrips(opts: {
       const photosSnap = await adminDb.collection('trips').doc(doc.id).collection('photos').orderBy('sortOrder').get()
       photos = photosSnap.docs.map(p => docToPhoto(p, doc.id))
     }
-    trips.push(docToTrip(doc, photos))
+    const trip = docToTrip(doc, photos)
+    
+    // Apply filters
+    if (opts.destinationSlug && trip.destinationSlug !== opts.destinationSlug) continue
+    if (opts.publishedOnly && !trip.isPublished) continue
+    if (opts.featured && !trip.isFeatured) continue
+    
+    trips.push(trip)
+  }
+
+  // Apply sorting: featured first, then createdAt desc
+  trips.sort((a, b) => {
+    if (a.isFeatured && !b.isFeatured) return -1
+    if (!a.isFeatured && b.isFeatured) return 1
+    const timeA = new Date(a.createdAt).getTime()
+    const timeB = new Date(b.createdAt).getTime()
+    return timeB - timeA
+  })
+
+  // Apply limit
+  if (opts.limit) {
+    trips = trips.slice(0, opts.limit)
   }
 
   // Client-side search filter (Firestore doesn't support full-text)
