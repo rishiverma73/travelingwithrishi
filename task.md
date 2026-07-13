@@ -1,4 +1,4 @@
-# Project Tasks: Traveling With Rishi
+ # Project Tasks: Traveling With Rishi
 
 - [x] **Phase 1: Project Setup & Database Layer**
   - [x] Scaffold Next.js 14 App Router project with Tailwind

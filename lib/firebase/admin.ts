@@ -7,25 +7,29 @@ import { getAuth, type Auth } from 'firebase-admin/auth'
 import { getFirestore, type Firestore } from 'firebase-admin/firestore'
 import { getStorage, type Storage } from 'firebase-admin/storage'
 
-function getAdminApp(): App {
+function getAdminApp(): App | null {
   if (getApps().length > 0) return getApps()[0]
 
-  // FIREBASE_PRIVATE_KEY comes from .env with escaped newlines (\n as literal string)
-  const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
+  try {
+    const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
 
-  return initializeApp({
-    credential: cert({
-      projectId: process.env.FIREBASE_PROJECT_ID!,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL!,
-      privateKey,
-    }),
-    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  })
+    return initializeApp({
+      credential: cert({
+        projectId: process.env.FIREBASE_PROJECT_ID!,
+        clientEmail: process.env.FIREBASE_CLIENT_EMAIL!,
+        privateKey: privateKey!,
+      }),
+      storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+    })
+  } catch (error) {
+    console.warn('Firebase Admin init skipped (expected during build if env vars are missing)')
+    return null
+  }
 }
 
-const adminApp: App = getAdminApp()
+const adminApp = getAdminApp()
 
-export const adminAuth: Auth = getAuth(adminApp)
-export const adminDb: Firestore = getFirestore(adminApp)
-export const adminStorage: Storage = getStorage(adminApp)
+export const adminAuth: Auth = adminApp ? getAuth(adminApp) : ({} as Auth)
+export const adminDb: Firestore = adminApp ? getFirestore(adminApp) : ({} as Firestore)
+export const adminStorage: Storage = adminApp ? getStorage(adminApp) : ({} as Storage)
 export { adminApp }
