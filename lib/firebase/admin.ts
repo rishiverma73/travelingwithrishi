@@ -15,11 +15,11 @@ function getAdminApp(): App | null {
 
     return initializeApp({
       credential: cert({
-        projectId: process.env.FIREBASE_PROJECT_ID!,
+        projectId: 'traveling-with-rishi',
         clientEmail: process.env.FIREBASE_CLIENT_EMAIL!,
         privateKey: privateKey!,
       }),
-      storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+      storageBucket: 'traveling-with-rishi.firebasestorage.app',
     })
   } catch (error) {
     console.warn('Firebase Admin init skipped (expected during build if env vars are missing)')
