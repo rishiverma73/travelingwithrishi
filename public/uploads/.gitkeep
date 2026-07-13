@@ -1,0 +1,3 @@
+This directory is used for uploaded photos. Do not delete this file.
+
+For production deployment on Vercel, replace the upload logic in lib/upload.ts with Cloudinary or S3.

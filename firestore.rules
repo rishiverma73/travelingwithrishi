@@ -1,0 +1,41 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ─── Destinations ───────────────────────────────────────────────────────
+    match /destinations/{slug} {
+      // Anyone can read destinations (needed for passport wall, public pages)
+      allow read: if true;
+      // Only admin can write
+      allow write: if isAdmin();
+    }
+
+    // ─── Trips ──────────────────────────────────────────────────────────────
+    match /trips/{tripId} {
+      // Public can read published trips; admin can read all
+      allow read: if resource.data.isPublished == true || isAdmin();
+      // Only admin can write
+      allow write: if isAdmin();
+
+      // ─── Photos subcollection ─────────────────────────────────────────────
+      match /photos/{photoId} {
+        // Public can read photos of published trips; admin can read all
+        allow read: if get(/databases/$(database)/documents/trips/$(tripId)).data.isPublished == true
+                    || isAdmin();
+        allow write: if isAdmin();
+      }
+    }
+
+    // ─── Site Settings ──────────────────────────────────────────────────────
+    match /settings/{doc} {
+      // Settings readable by anyone (needed for about page, social links)
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // ─── Helper Functions ────────────────────────────────────────────────────
+    function isAdmin() {
+      return request.auth != null && request.auth.token.admin == true;
+    }
+  }
+}

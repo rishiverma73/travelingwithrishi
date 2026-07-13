@@ -1,0 +1,42 @@
+{
+  "name": "traveling-with-rishi",
+  "version": "1.0.0",
+  "description": "A premium travel diary and portfolio — chasing every state of India, one story at a time.",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "keywords": [
+    "travel",
+    "india",
+    "diary",
+    "portfolio"
+  ],
+  "author": "Rishi",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/caseless": "^0.12.5",
+    "autoprefixer": "^10.5.2",
+    "postcss": "^8.5.17",
+    "tailwindcss": "^3.4.19",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.4"
+  },
+  "dependencies": {
+    "@types/node": "^26.1.1",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "dotenv": "^17.4.2",
+    "firebase": "^12.16.0",
+    "firebase-admin": "^14.1.0",
+    "framer-motion": "^12.42.2",
+    "lucide-react": "^0.360.0",
+    "next": "^14.2.35",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-dropzone": "^16.0.0",
+    "recharts": "^3.9.2",
+    "sharp": "^0.35.3"
+  }
+}
