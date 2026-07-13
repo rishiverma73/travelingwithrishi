@@ -5,6 +5,7 @@
 import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app'
 import { getAuth, type Auth } from 'firebase/auth'
 import { getStorage, type FirebaseStorage } from 'firebase/storage'
+import { getAnalytics, isSupported, type Analytics } from 'firebase/analytics'
 
 const firebaseConfig = {
   apiKey: "AIzaSyD_igl2qP8e3YPdKny3_XjqdCZ4s5ZDpbo",
@@ -21,4 +22,15 @@ const app: FirebaseApp = getApps().length > 0 ? getApp() : initializeApp(firebas
 
 export const auth: Auth = getAuth(app)
 export const storage: FirebaseStorage = getStorage(app)
-export { app }
+
+// Initialize Analytics only on the client side
+let analytics: Analytics | null = null
+if (typeof window !== 'undefined') {
+  isSupported().then(supported => {
+    if (supported) {
+      analytics = getAnalytics(app)
+    }
+  })
+}
+
+export { app, analytics }
